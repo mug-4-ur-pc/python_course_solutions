@@ -2,16 +2,38 @@ import numpy as np
 
 
 def _drt_nearest(img, drt, params):
-    pass
+    p = params.p_start
+    for k in range(params.p_amount):
+        alpha = p
+        tau = params.tau_start
+        for h in range(params.tau_amount):
+            beta = tau
+
+            m_min, m_max = 0, img.shape[1] - 1
+            if alpha > 0:
+                m_min = max(m_min, np.ceil((-beta - 0.5) / alpha))
+                m_max = min(m_max, np.floor((img.shape[0] - 0.5 - beta) / alpha))
+            elif alpha < 0:
+                m_min = max(m_min, np.ceil((img.shape[0] - 0.5 - beta) / alpha))
+                m_max = min(m_max, np.floor((-beta - 0.5) / alpha))
+
+            m = np.arange(m_min, m_max + 1, dtype=int)
+            n = np.round(alpha * m + beta).astype(int)
+            res = img[n, m]
+
+            drt[h, k] = res.sum()
+            tau += params.dtau
+
+        p += params.dp
 
 
 def _drt_linear(img, drt, params):
     p = params.p_start
-    for curr_k in range(params.k):
-        alpha = p * params.dx / params.dy
+    for k in range(params.p_amount):
+        alpha = p
         tau = params.tau_start
-        for curr_h in range(params.h):
-            beta = (p * params.x_min + tau - params.y_min) / params.dy
+        for h in range(params.tau_amount):
+            beta = tau
 
             m_min, m_max = 0, img.shape[1] - 1
             if alpha > 0:
@@ -24,44 +46,52 @@ def _drt_linear(img, drt, params):
             m = np.arange(m_min, m_max + 1, dtype=int)
             nfloat = alpha * m + beta
             n = np.floor(nfloat).astype(int)
-            # print(m_min, m_max, alpha, beta, n[0])
             w = nfloat - n
             res = img[n, m] * (1 - w) + img[n + 1, m] * w
 
-            drt[curr_h, curr_k] = res.sum() * params.dx
+            drt[h, k] = res.sum()
             tau += params.dtau
 
         p += params.dp
 
 
 def _drt_sinc(img, drt, params):
-    pass
+    p = params.p_start
+    for k in range(params.p_amount):
+        alpha = min(1, 1 / np.abs(p))
+        tau = params.tau_start
+        for h in range(params.tau_amount):
+            gamma = p * (np.arange(img.shape[1]) + tau) * np.pi
+            gamma = gamma - np.pi * np.expand_dims(np.arange(img.shape[0]), axis=1)
+
+            res = np.ones_like(img)
+            gamma_not_0 = gamma != 0
+            res[gamma_not_0] = np.sin(gamma[gamma_not_0] * alpha) / gamma[gamma_not_0]
+            res *= img
+
+            drt[h, k] = res.sum()
+            tau += params.dtau
+
+        p += params.dp
 
 
 class DRTParams:
     def __init__(
         self,
-        k=101,
-        h=101,
-        dx=1,
-        dy=1,
-        x_min=0,
-        y_min=0,
-        p_start=-1,
-        tau_start=0,
+        *,
+        p_amount=101,
+        tau_amount=101,
+        p_start=-1.0,
+        tau_start=0.0,
         dp=1 / 1024,
-        dtau=0,
+        dtau=0.0,
     ):
-        self.k = k
-        self.h = h
-        self.dx = dx
-        self.dy = dy
-        self.x_min = x_min
-        self.y_min = y_min
+        self.p_amount = p_amount
+        self.tau_amount = tau_amount
         self.p_start = p_start
         self.tau_start = tau_start
         self.dp = dp
-        self.dtau = dy if dtau <= 0 else dtau
+        self.dtau = 1 if dtau <= 0 else dtau
 
 
 def drt(
@@ -69,26 +99,29 @@ def drt(
     interpolation="linear",
     *,
     params=None,
-    k=0,
-    h=0,
-    dx=1,
-    dy=1,
-    x_min=0,
-    y_min=0,
-    p_start=-1,
-    tau_start=0,
-    dp=0,
-    dtau=0,
+    p_amount=0,
+    tau_amount=0,
+    p_start=-1.0,
+    tau_start=0.0,
+    dp=0.0,
+    dtau=0.0,
     drt_buffer=None,
 ):
-    h = img.shape[0] if h <= 0 else h
-    dp = dp if dp > 0 else dy / max(abs(x_min), x_min + dx * (img.shape[1] - 1))
-    k = k if k > 0 else int(np.floor(2 / dp))
+    tau_amount = tau_amount if tau_amount > 0 else img.shape[0]
+    dp = dp if dp > 0 else 1 / (img.shape[1] - 1)
+    p_amount = p_amount if p_amount > 0 else int(np.round(2 / dp)) + 1
     if params is None:
-        params = DRTParams(k, h, dx, dy, x_min, y_min, p_start, tau_start, dp, dtau)
+        params = DRTParams(
+            p_amount=p_amount,
+            tau_amount=tau_amount,
+            p_start=p_start,
+            tau_start=tau_start,
+            dp=dp,
+            dtau=dtau,
+        )
 
     if drt_buffer is None:
-        drt_buffer = np.zeros([params.h, params.k])
+        drt_buffer = np.zeros([params.tau_amount, params.p_amount], dtype=np.float64)
 
     if interpolation == "nearest":
         _drt_nearest(img, drt_buffer, params)
