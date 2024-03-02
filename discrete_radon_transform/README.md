@@ -15,4 +15,5 @@ All information about DRT and other beautiful stuff can be found [here](https://
 ![](img/drt_linear.png)
 ### sinc
 Unfortunately, it doesn't work correctly :(
+
 ![](img/drt_sinc.png)
