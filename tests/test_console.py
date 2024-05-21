@@ -1,6 +1,7 @@
 """DRT Unit tests."""
 
 import os
+from typing import Generator
 
 
 from click.testing import CliRunner
@@ -27,7 +28,7 @@ def tmp_output() -> str:
 
 
 @pytest.fixture(autouse=True)
-def manage_tmp_file(tmp_output: str) -> None:
+def manage_tmp_file(tmp_output: str) -> Generator:
     """Fixture to automatically delete output file."""
     yield
     if os.path.exists(tmp_output):

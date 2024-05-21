@@ -7,7 +7,7 @@ from . import __version__
 from .drt import find_lines
 
 
-@click.command()
+@click.command(help="I can tier all your enemies to pieces! Just ask for it!")
 @click.option("-s", "--source", help="Input file")
 @click.option("-o", "--output", default="drt.png", help="Output file")
 @click.option(

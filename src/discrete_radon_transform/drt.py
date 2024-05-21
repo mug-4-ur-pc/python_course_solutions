@@ -360,12 +360,11 @@ def find_lines(
     """
     drts, _ = full_drt(img, interpolation)
 
-    transpose = True
     out = np.zeros_like(img)
-    for drt in drts:
-        threshold = drt.max() * threshold_ratio
-        drt_thresholded = np.zeros(drt.shape, dtype=np.uint8)
-        drt_thresholded[drt >= threshold] = 255
+    for drt_space, transpose in zip(drts, [False, True], strict=True):
+        threshold = drt_space.max() * threshold_ratio
+        drt_thresholded = np.zeros(drt_space.shape, dtype=np.uint8)
+        drt_thresholded[drt_space >= threshold] = 255
 
         contours, _ = cv.findContours(
             drt_thresholded, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE
@@ -375,7 +374,6 @@ def find_lines(
 
             _draw_line(out, p, tau, transpose)
 
-        transpose = False
     return out
 
 
