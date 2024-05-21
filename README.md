@@ -1,5 +1,24 @@
-# python_course_solutions
-This is my solutions for iitp python course
+# Discrete Radon Transform
+This is an implementation of DRT algorithm
+with different interpolation methods:
+1. `nearest` --- use nearest-neighbour interpolation;
+2. `linear` --- use linear interpolation;
+`sinc` --- use Whittaker-Shannon sampling theorem.
 
-## Contents
-- [Discrete Radon transform](discrete_radon_transform/)
+This algorithm can detect lines in given image.
+For more details see documentation.
+
+All information about DRT and other beautiful stuff can be found [here](https://backend.orbit.dtu.dk/ws/portalfiles/portal/5529668/Binder1.pdf).
+
+
+## Example
+### original
+![](img/example.png)
+### nearest
+![](img/drt_nearest.png)
+### linear
+![](img/drt_linear.png)
+### sinc
+Unfortunately, it doesn't work correctly :(
+
+![](img/drt_sinc.png)
