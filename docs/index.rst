@@ -39,9 +39,9 @@ DRT's usage looks like:
 
    Path where output will be written
 
-.. option:: --full
+.. option:: -t <FLOAT>, --threshold <FLOAT>
 
-    Transform original image and its transpose result to produce all lines finding.
+    Specify threshold which will be used to extract line parameters from $$p$$ $$tau$$ DRT space.
 
 .. option:: -i ["nearest", "linear", "sinc"], --interpolation ["nearest", "linear", "sinc"]
     Set an interpolation method. Linear interpolation will be used by default.
